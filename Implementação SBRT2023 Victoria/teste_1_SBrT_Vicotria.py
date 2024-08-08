@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import random
 
 
-K = 20                                  # N° dispositivos
+K = 50                                  # N° dispositivos
 N = 10                                  # N° de antenas
 R = 10                                  # Raio [m]
 f = 915 *(10**6)                        # Freq. da portadora
@@ -33,10 +33,11 @@ c = 3*(10**(8))                         # Vel. da luz
 Omega = 1/(1+np.exp(a*b))               # Constante resposta 0_in-0_out
 Pot_k = 0
 tau_k_estrela_k_igual_1_valor = 0
+tau_k_valor = 0
 
 
 def dist_euclid_quad (x, y):
-    d_k = np.sqrt(((x-y)**2)) 
+    d_k = np.sqrt(((x**2)+(y**2))) 
     return d_k
 
 def Beta_k(d_k):
@@ -120,101 +121,128 @@ Gamma = np.array([])
 Gamma_k_j = np.array([])
 Phi_NEIG_j = np.array([])
 tau_k_estrela_maior_que_1 = np.array([])
+tau_k_estrela = np.array([])
+Phi_k_vetor = np.array([])
+Phi_linha_k = np.array([])
 tau_total = np.array([])
+tau_total_vetor = np.array([])
+
 
 seed = np.random.seed(9)
 
+for q in range (0,K):
 
-for k in range (0, K):
-    # Canal h
-    h_barra = np.append(h_barra, h_barra_k())
-    h_barra_vetor = np.append(h_barra_vetor, h_barra)
-    h_til = np.append(h_barra, h_til_k())
-    canal_h = np.append(canal_h, canal_h_k(kappa, h_barra_k(), h_til_k()))
-    h_k_hermitiano = np.conjugate(np.transpose(canal_h))
-    
-    # Beta
-    x = np.random.randint(1,10)
-    y = np.random.randint(1,10)
-    Beta = np.append(Beta, Beta_k(dist_euclid_quad(x,y)))
+    for k in range (0, K):
+        # Canal h
+        h_barra = np.append(h_barra, h_barra_k())
+        h_barra_vetor = np.append(h_barra_vetor, h_barra)
+        h_til = np.append(h_barra, h_til_k())
+        canal_h = np.append(canal_h, canal_h_k(kappa, h_barra_k(), h_til_k()))
+        h_k_hermitiano = np.conjugate(np.transpose(canal_h))
 
-    #Psi_k_estrela
-    h_barra_dividido_pela_norma = h_barra_vetor[k] / np.abs(h_barra_vetor[k])
-    h_barra_dividido_pela_norma_vetor = np.append(h_barra_dividido_pela_norma_vetor, h_barra_dividido_pela_norma)
-    h_barra_dividido_pela_norma_transposto = np.transpose(h_barra_dividido_pela_norma_vetor)
-    Psi_k_estrela = (np.sqrt(Pt/N)) * h_barra_dividido_pela_norma_transposto
+        # Beta
+        x = np.random.randint(1,10)
+        y = np.random.randint(1,10)
+        Beta = np.append(Beta, Beta_k(dist_euclid_quad(x,y)))
 
-for kk in range (0, K):
-    Pot_k = Beta[kk] * (np.abs(Psi_k_estrela[kk] * h_k_hermitiano[kk]))**2
-    P = np.append(P, Pot_k)
+        #Psi_k_estrela
+        h_barra_dividido_pela_norma = h_barra_vetor[k] / np.abs(h_barra_vetor[k])
+        h_barra_dividido_pela_norma_vetor = np.append(h_barra_dividido_pela_norma_vetor, h_barra_dividido_pela_norma)
+        h_barra_dividido_pela_norma_transposto = np.transpose(h_barra_dividido_pela_norma_vetor)
+        Psi_k_estrela = (np.sqrt(Pt/N)) * h_barra_dividido_pela_norma_transposto
+
+    for kk in range (0, K):
+        Pot_k = Beta[kk] * (np.abs(Psi_k_estrela[kk] * h_k_hermitiano[kk]))**2
+        P = np.append(P, Pot_k)
 
 
-# print("Funcionou até aqui :)")
+    # print("Funcionou até aqui :)")
 
-for k in range (0, K):
-    # Gamma_k
-    Gamma = np.append(Gamma, Gamma_k(P[k]))
+    for k in range (0, K):
+        # Gamma_k
+        Gamma = np.append(Gamma, Gamma_k(P[k]))
 
-# Phi_k (Energia coletada)
-    # Precisa-se calcular tau_k que é diferente para k = 1 e k>1
-if k==0:
-    tau_k_estrela_k_igual_1_valor = tau_k_estrela_k_igual_1(Gamma[0])
-if k>1:
-    for j in range (0, K-1):
-    
-        # Gamma k,j:
-        Gamma_k_j_valor = mu / (1 + (np.exp(-a * ((Beta[k] * ((np.absolute(Psi_k_estrela[j-1]) * h_k_hermitiano[j])**2))-b))))
-        Gamma_k_j = np.append(Gamma_k_j, Gamma_k_j_valor)
-        #Phi_NEIG_j
-        # if j == 1:
-        #     tau_j = tau_k_estrela_k_igual_1_valor # tau_j vai ser igual ao tau_k-1 (que é o primeiro termo)
-        # if j > 1
-        Phi_NEIG_j_valor = ((Gamma_k_j[j] - (mu * Omega)) / (1-Omega)) # falta o tau_j
-        Phi_NEIG_j = np.append(Phi_NEIG_j, Phi_NEIG_j_valor)
+        # Phi_k (Energia coletada)
+        # Precisa-se calcular tau_k_estrela que é diferente para k = 1 e k>1
+        if k==0:
+            tau_k_estrela_k_igual_1_valor = tau_k_estrela_k_igual_1(Gamma[0])
+            tau_k_estrela = np.append(tau_k_estrela, tau_k_estrela_k_igual_1_valor)
 
-       
+    for j in range (0, K-1)  :
+        # for j in range (0, K-1):
+            # Gamma k,j:
+            Gamma_k_j_valor = mu / (1 + (np.exp(-a * ((Beta[k] * ((np.absolute(Psi_k_estrela[j-1]) * h_k_hermitiano[j])**2))-b))))
+            Gamma_k_j = np.append(Gamma_k_j, Gamma_k_j_valor)
+            #Phi_NEIG_j
+            Phi_NEIG_j_valor = ((Gamma_k_j[j] - (mu*Omega)) / (1-Omega)) * tau_k_estrela[j]
+            Phi_NEIG_j = np.append(Phi_NEIG_j, Phi_NEIG_j_valor)
+            #tau_k_estrela
+            tau_k_valor = (E_min - ((np.sum(Phi_NEIG_j))*(1-Omega))) / (Gamma[k] - (mu*Omega))
+            tau_k_estrela = np.append(tau_k_estrela, tau_k_valor)
 
-sum_Phi_NEIG = np.sum(Phi_NEIG_j)
 
-for k in range (0, K):
-    tau_k_estrela_maior_que_1_valor = ((E_min - sum_Phi_NEIG)-(1-Omega)) / ((Gamma[k])-(mu*Omega))
-    tau_k_estrela_maior_que_1 = (tau_k_estrela_maior_que_1, tau_k_estrela_maior_que_1_valor)
+
+    # Cálculo Phi_k
+    for k in range (0, K):    
+        Phi_k_valor = tau_k_estrela[k] * ((Gamma[k] - (mu*Omega)) / (1 - Omega))
+        Phi_k_vetor = np.append(Phi_k_vetor, Phi_k_valor)
+
+        # Cálculo de tau_k_total
+
+
+    # Cálculo Phi_linha_k
+    for j in range(0, K-1):
+        Phi_linha_k_valor = Phi_NEIG_j[j] + Phi_k_vetor[k]
+        Phi_linha_k = np.append(Phi_linha_k, Phi_linha_k_valor)    
+
+    # tau_t total
+    tau_total = np.sum(np.abs(tau_k_estrela))
+
+
+    tau_total_vetor = np.append(tau_total_vetor, tau_total)
+
+
+print(tau_total)
+
+
+
+
 
 
     
 # tau_total_valor = sum(tau_k_estrela_maior_que_1)
     
-print ((tau_k_estrela_maior_que_1))
-print(tau_k_estrela_k_igual_1_valor)
-print(len(Gamma_k_j))
 
             
             
         
-# print(len(Gamma_k_j))
-# print(len(Phi_NEIG_j))
+print(len(Gamma_k_j))
+print(len(Phi_NEIG_j))
 
 
-# print(len(Psi_k_estrela))
-# print(Psi_k_estrela)
-# print(len(Beta))
-# print(len(Psi_k_estrela))
-# print(len(h_k_hermitiano))
-# print(len(P))
+print(len(Psi_k_estrela))
+print(Psi_k_estrela)
+print(len(Beta))
+print(len(Psi_k_estrela))
+print(len(h_k_hermitiano))
+print(len(P))
 
 # P_k
 
 
 # %% Plot
 
-# L = np.arange(1,19,1)
+num_dispositivos = np.arange(0,len(tau_total_vetor),1)
+# print(len(num_dispositivos))
+# print(len(tau_total_vetor))
 
-# plt.semilogy(L, tau_k_estrela, 'o-')
 
-# plt.xlabel('Números de dispostivos (K)')
-# plt.ylabel('tau_T')
-# plt.grid(True)
-# plt.legend()
-# plt.show()
+plt.semilogy(num_dispositivos, tau_total_vetor, 'o-')
+
+plt.xlabel('Números de dispostivos (K)')
+plt.ylabel('tau_T')
+plt.grid(True)
+plt.legend()
+plt.show()
 
 # %%
